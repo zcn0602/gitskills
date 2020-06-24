@@ -1,0 +1,85 @@
+properties(
+  [[$class : 'DingTalkJobProperty', 
+  notifierConfigs : [[checked : false, 
+  robotId : 'dc41feb4-52b8-48f8-9483-f1a63c387fcf', 
+  robotName : 'jks_robot' ]]], 
+  parameters(
+    [choice(
+      choices : [ 'deploy', 'rollback' ], description : '选择升级或者业务回退，回退支持回退至上一个版本。', 
+      name : 'step'
+    ), 
+    [$class : 'ChoiceParameter', 
+    choiceType : 'PT_SINGLE_SELECT', 
+    description : '请选择升级服务类型~', 
+    filterLength : 1, 
+    filterable : false, 
+    name : 'type', 
+    randomName : 'choice-parameter-97444093087775387', 
+    script : [$class : 'GroovyScript', 
+    fallbackScript : [classpath : [], 
+    sandbox : false, 
+    script : 'return["error type"]' ], 
+    script : [classpath : [], 
+    sandbox : false, 
+    script : '[\'bash\', \'-c\', "cat /etc/ansible/.prod/prod.txt |awk \'{print \\$1}\' |uniq "].execute().text.readLines()' ]]], 
+    [$class : 'CascadeChoiceParameter', 
+    choiceType : 'PT_SINGLE_SELECT', 
+    description : '请选择业务具体名称，filters窗口支持过滤~', 
+    filterLength : 1, 
+    filterable : true, 
+    name : 'pord', 
+    randomName : 'choice-parameter-97444093090047227', 
+    referencedParameters : 'type', 
+    script : [$class : 'GroovyScript', 
+    fallbackScript : [classpath : [], 
+    sandbox : false, 
+    script : '' ], 
+    script : [classpath : [], 
+    sandbox : false, 
+    script : '''type=type
+[\'bash\', \'-c\', "cat /etc/ansible/.prod/prod.txt | grep $type |awk \'{print \\$2}\' |uniq"].execute().text.readLines()''' ]]], 
+    [$class : 'CascadeChoiceParameter', 
+    choiceType : 'PT_SINGLE_SELECT', 
+    description : '服务的配置文件目录', 
+    filterLength : 1, 
+    filterable : false, 
+    name : 'config', 
+    randomName : 'choice-parameter-97444093092212203', 
+    referencedParameters : 'prod', 
+    script : [$class : 'GroovyScript', 
+    fallbackScript : [classpath : [], 
+    sandbox : false, 
+    script : '' ], 
+    script : [classpath : [], 
+    sandbox : false, 
+    script : '''prod=prod
+[\'bash\', \'-c\', "cat /etc/ansible/.prod/prod.txt | grep  \' $prod \' |awk \'{print \\$3}\' |uniq"].execute().text.readLines()''' ]]], 
+    [$class : 'CascadeChoiceParameter', 
+    choiceType : 'PT_SINGLE_SELECT', 
+    description : '每个选项默认执行备份，若war、conf均无改动，则不会重启服务', 
+    filterLength : 1, 
+    filterable : false, 
+    name : 'choice', 
+    randomName : 'choice-parameter-97444093094387799', 
+    referencedParameters : 'type', 
+    script : [$class : 'GroovyScript', 
+    fallbackScript : [classpath : [], 
+    sandbox : false, 
+    script : '' ], 
+    script : [classpath : [], 
+    sandbox : false, 
+    script : '''if(type.equals("tomcat")){
+ return ["war","war_conf","conf"]
+}
+if(type.equals("java")){
+ return ["jar","jar_conf","conf"]
+}
+if(type.equals("eoa-web")){
+ return ["replace"]
+}''' ]]], 
+    string(
+      defaultValue : '', description : '请填写svn地址', 
+      name : 'svnUrl', trim : false
+    ) ]
+  ) ]
+)
