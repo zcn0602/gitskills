@@ -1,9 +1,5 @@
 properties(
-  [[$class : 'DingTalkJobProperty', 
-  notifierConfigs : [[checked : false, 
-  robotId : 'dc41feb4-52b8-48f8-9483-f1a63c387fcf', 
-  robotName : 'jks_robot' ]]], 
-  parameters(
+  [parameters(
     [choice(
       choices : [ 'deploy', 'rollback' ], description : '选择升级或者业务回退，回退支持回退至上一个版本。', 
       name : 'step'
@@ -14,7 +10,7 @@ properties(
     filterLength : 1, 
     filterable : false, 
     name : 'type', 
-    randomName : 'choice-parameter-97444093087775387', 
+    randomName : 'choice-parameter-115089932551867892', 
     script : [$class : 'GroovyScript', 
     fallbackScript : [classpath : [], 
     sandbox : false, 
@@ -24,11 +20,11 @@ properties(
     script : '[\'bash\', \'-c\', "cat /etc/ansible/.prod/prod.txt |awk \'{print \\$1}\' |uniq "].execute().text.readLines()' ]]], 
     [$class : 'CascadeChoiceParameter', 
     choiceType : 'PT_SINGLE_SELECT', 
-    description : '请选择业务具体名称，filters窗口支持过滤~', 
+    description : '请选择业务具体名称，filters窗口过滤~', 
     filterLength : 1, 
     filterable : true, 
-    name : 'pord', 
-    randomName : 'choice-parameter-97444093090047227', 
+    name : 'prod', 
+    randomName : 'choice-parameter-115089932555356269', 
     referencedParameters : 'type', 
     script : [$class : 'GroovyScript', 
     fallbackScript : [classpath : [], 
@@ -44,7 +40,7 @@ properties(
     filterLength : 1, 
     filterable : false, 
     name : 'config', 
-    randomName : 'choice-parameter-97444093092212203', 
+    randomName : 'choice-parameter-115089932558766395', 
     referencedParameters : 'prod', 
     script : [$class : 'GroovyScript', 
     fallbackScript : [classpath : [], 
@@ -60,7 +56,7 @@ properties(
     filterLength : 1, 
     filterable : false, 
     name : 'choice', 
-    randomName : 'choice-parameter-97444093094387799', 
+    randomName : 'choice-parameter-115089932562161861', 
     referencedParameters : 'type', 
     script : [$class : 'GroovyScript', 
     fallbackScript : [classpath : [], 
@@ -69,18 +65,74 @@ properties(
     script : [classpath : [], 
     sandbox : false, 
     script : '''if(type.equals("tomcat")){
- return ["war","war_conf","conf"]
+return ["war","war_conf","conf"]
 }
 if(type.equals("java")){
- return ["jar","jar_conf","conf"]
+return ["jar","jar_conf","conf"]
 }
 if(type.equals("eoa-web")){
- return ["replace"]
+return ["replace"]
 }''' ]]], 
     string(
       defaultValue : '', description : '请填写svn地址', 
-      name : 'svnUrl', trim : false
+      name : 'svnUrl'
     ) ]
   ) ]
 )
 
+pipeline {
+   agent any
+
+   stages {
+      stage('Checkout') {
+         steps {
+             script{
+                checkout([$class: 'SubversionSCM',
+                additionalCredentials: [],
+                excludedCommitMessages: '',
+                excludedRegions: '', excludedRevprop: '',
+                excludedUsers: '',
+                filterChangelog: false,
+                ignoreDirPropChanges: false,
+                includedRegions: '',
+                locations: 
+                   [[cancelProcessOnExternalsFail: true,
+                   credentialsId: '63d7a7d0-ece6-4134-8ac0-030f2b60c832',
+                   depthOption: 'infinity',
+                   ignoreExternalsOption: true,
+                   local: '.',
+                   remote: '$svnUrl']],
+               quietOperation: true,
+               workspaceUpdater: [$class: 'UpdateUpdater']])
+             }
+         }
+      }
+      stage('deploy') {
+            when{
+                environment name: 'step', value: 'deploy'
+                }
+            steps{
+            dir("/etc/ansible"){
+            
+            script{
+                if (env.type == 'tomcat' && env.prod != 'webrelay') {
+                    sh '/usr/bin/ansible-playbook deploy-tomcat.yml --tags "$choice" -e "prod"=$prod -e "config"=$config -e "WORKSPACE"=$WORKSPACE'
+                  //sh 'echo -e tomcat $prod '
+                  
+                }else if (env.prod == 'webrelay'){
+                  sh 'echo -e webrelay webrelay'
+                  
+                }else if (env.type == 'java'){
+                  sh '/usr/bin/ansible-playbook deploy-java.yml --tags "$choice" -e "prod"=$prod -e "config"=$config -e "WORKSPACE"=$WORKSPACE'
+                  
+                }else if (env.type == 'static'){
+                  sh 'echo -e else if static' 
+                }
+            }
+            }
+        }
+      }
+   }   
+
+}  
+  
