@@ -6,41 +6,41 @@ properties(
     ), 
     [$class : 'ChoiceParameter', 
     choiceType : 'PT_SINGLE_SELECT', 
-    description : '请选择升级服务类型~', 
+    description : '请选择升级服务类型', 
+    filterLength : 1, 
+    filterable : true, 
+    name : 'prod', 
+    randomName : 'choice-parameter-115098745632263876', 
+    script : [$class : 'GroovyScript', 
+    fallbackScript : [classpath : [], 
+    sandbox : false, 
+    script : 'return["error prod"]' ], 
+    script : [classpath : [], 
+    sandbox : false, 
+    script : '[\'bash\', \'-c\', "cat /etc/ansible/.prod/prod.txt |awk \'{print \\$2}\' |uniq |sort"].execute().text.readLines()' ]]], 
+    [$class : 'CascadeChoiceParameter', 
+    choiceType : 'PT_SINGLE_SELECT', 
+    description : '请选择业务名称', 
     filterLength : 1, 
     filterable : false, 
     name : 'type', 
-    randomName : 'choice-parameter-115089932551867892', 
+    randomName : 'choice-parameter-115098745636599396', 
+    referencedParameters : 'prod', 
     script : [$class : 'GroovyScript', 
     fallbackScript : [classpath : [], 
     sandbox : false, 
     script : 'return["error type"]' ], 
     script : [classpath : [], 
     sandbox : false, 
-    script : '[\'bash\', \'-c\', "cat /etc/ansible/.prod/prod.txt |awk \'{print \\$1}\' |uniq "].execute().text.readLines()' ]]], 
-    [$class : 'CascadeChoiceParameter', 
-    choiceType : 'PT_SINGLE_SELECT', 
-    description : '请选择业务具体名称，filters窗口过滤~', 
-    filterLength : 1, 
-    filterable : true, 
-    name : 'prod', 
-    randomName : 'choice-parameter-115089932555356269', 
-    referencedParameters : 'type', 
-    script : [$class : 'GroovyScript', 
-    fallbackScript : [classpath : [], 
-    sandbox : false, 
-    script : '' ], 
-    script : [classpath : [], 
-    sandbox : false, 
-    script : '''type=type
-[\'bash\', \'-c\', "cat /etc/ansible/.prod/prod.txt | grep $type |awk \'{print \\$2}\' |uniq"].execute().text.readLines()''' ]]], 
+    script : '''prod=prod
+[\'bash\', \'-c\', "cat /etc/ansible/.prod/prod.txt | grep \'$prod \'  |awk \'{print \\$1}\' |uniq"].execute().text.readLines()''' ]]], 
     [$class : 'CascadeChoiceParameter', 
     choiceType : 'PT_SINGLE_SELECT', 
     description : '服务的配置文件目录', 
     filterLength : 1, 
     filterable : false, 
     name : 'config', 
-    randomName : 'choice-parameter-115089932558766395', 
+    randomName : 'choice-parameter-115098745640167076', 
     referencedParameters : 'prod', 
     script : [$class : 'GroovyScript', 
     fallbackScript : [classpath : [], 
@@ -52,11 +52,11 @@ properties(
 [\'bash\', \'-c\', "cat /etc/ansible/.prod/prod.txt | grep  \' $prod \' |awk \'{print \\$3}\' |uniq"].execute().text.readLines()''' ]]], 
     [$class : 'CascadeChoiceParameter', 
     choiceType : 'PT_SINGLE_SELECT', 
-    description : '每个选项默认执行备份，若war、conf均无改动，则不会重启服务', 
+    description : '每个选项默认执行备份，若war、conf无改动，则不会重启服务', 
     filterLength : 1, 
     filterable : false, 
     name : 'choice', 
-    randomName : 'choice-parameter-115089932562161861', 
+    randomName : 'choice-parameter-115098745644116150', 
     referencedParameters : 'type', 
     script : [$class : 'GroovyScript', 
     fallbackScript : [classpath : [], 
@@ -65,16 +65,22 @@ properties(
     script : [classpath : [], 
     sandbox : false, 
     script : '''if(type.equals("tomcat")){
-return ["war","war_conf","conf"]
+ return ["war","war_conf","conf"]
 }
 if(type.equals("java")){
-return ["jar","jar_conf","conf"]
+ return ["jar","jar_conf","conf"]
 }
-if(type.equals("eoa-web")){
-return ["replace"]
+if(type.equals("spring")){
+ return ["jar","jar_conf","conf"]
+}
+if(type.equals("vhsm")){
+ return ["war","war_conf","conf"]
+}
+if(type.equals("static")){
+ return ["replace"]
 }''' ]]], 
     string(
-      defaultValue : '', description : '请填写svn地址', 
+      defaultValue : '', description : 'svn地址', 
       name : 'svnUrl'
     ) ]
   ) ]
